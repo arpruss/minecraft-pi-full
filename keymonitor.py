@@ -2,7 +2,7 @@ import evdev
 import getopt
 from select import select
 from sys import argv, exit
-from os import system
+from os import system,kill
 
 exitMode = False
 
@@ -40,6 +40,7 @@ class KeyDescription(object):
         return False
 
 triggers = []
+deadMonitors = {}
 
 monitored = []
 selectList = {}
@@ -77,7 +78,6 @@ def updateMonitoring():
 def help():
     print("Usage: python keymonitor.py key1 command1 [exit] [key2 command2 [exit]] ...]")
     exit(0)
-    
 
 def parseKey(k):
     k = k.replace(" ", "")
@@ -91,19 +91,36 @@ def parseKey(k):
 pos = 1
 
 while pos+1 < len(argv):
-    k = parseKey(argv[pos])
+    deadPid = None
+    if argv[pos].startswith("dead"):
+       deadPid = int(argv[pos][4:].replace(" ","").replace("(","").replace(")",""))
+    else:
+       k = parseKey(argv[pos])
     c = argv[pos+1]
     e = False
     if pos+2 < len(argv) and argv[pos+2] == "exit":
         e = True
         pos += 1
-    triggers.append((k,c,e))
+    if deadPid is None:
+        triggers.append((k,c,e))
+    else:
+        deadMonitors[deadPid] = (c,e)
     pos += 2
         
-if not triggers:
+if not triggers and not deadMonitors:
     help()
     
 while True:
+    for pid in deadMonitors:
+        try:
+            kill(pid,0)
+        except:
+            system(deadMonitors[pid][0])
+            if deadMonitors[pid][1]:
+                exit(1)
+            else:
+                del deadMonitors[pid]
+                break
     updateMonitoring()
     try:
         r, w, x = select(selectList, [], [], 0.25)
@@ -125,4 +142,4 @@ while True:
         exit(0)
     except Exception:
         pass
-    
+
