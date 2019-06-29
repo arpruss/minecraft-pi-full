@@ -1,4 +1,5 @@
+BASEDIR=$(dirname "$0")
 $* &
 main=$!
 echo $main
-python keymonitor.py "alt+4" "pkill -P $main" exit "alt+f4" "pkill -P $main" exit "ctrl+q" "pkill -P $main" exit
+python $BASEDIR/keymonitor.py "alt+4" "kill $main" exit "alt+f4" "kill $main" exit "ctrl+q" "kill $main" exit
