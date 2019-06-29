@@ -118,7 +118,6 @@ while True:
                     if event.value:
                         for trig in triggers:
                             if trig[0].pressed(event.code):
-                                print(trig[2])
                                 system(trig[1])
                                 if trig[2]:
                                     exit(0)

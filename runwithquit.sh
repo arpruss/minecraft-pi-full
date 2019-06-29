@@ -1,5 +1,4 @@
 $* &
 main=$!
 echo $main
-python keymonitor.py "ctrl+q" "pkill -P $main" exit
-echo kill -9 $monitor
+python keymonitor.py "alt+4" "pkill -P $main" exit "alt+f4" "pkill -P $main" exit "ctrl+q" "pkill -P $main" exit
