@@ -47,15 +47,12 @@ selectList = {}
 
 def getKeyboardDevices():
     devices = []
-    for d in [evdev.InputDevice(path) for path in evdev.list_devices()]:
-        c = d.capabilities(verbose=True)
-        try:
-            if ('KEY_W',17) in c[('EV_KEY', 1)]:
-                devices.append(d)
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except Exception:
-            pass
+    for d in (evdev.InputDevice(path) for path in evdev.list_devices()):
+        c = d.capabilities()
+        for t in triggers:
+             if t[0].key in c.get(evdev.ecodes.EV_KEY,[]): #('EV_KEY', 1),[]):
+                 devices.append(d)
+                 break
     return devices
 
 def updateMonitoring():
@@ -72,6 +69,7 @@ def updateMonitoring():
                 changed = True
     if changed:
         monitored = current
+        print("Monitoring "+str(monitored))
         selectList = {d.fd:d for d in current}
     return changed
 
