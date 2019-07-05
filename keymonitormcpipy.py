@@ -4,7 +4,9 @@ import pyosd
 from evdev import ecodes as ecodes
 from select import select
 from sys import argv, exit
-from os import system,kill
+import signal
+import subprocess
+import os
 
 osd = pyosd.osd()
 
@@ -121,15 +123,32 @@ def showTyped():
     else:
         osd.display("")
 
+lastProcess = None
+
 def runScript(s):
+    global lastProcess
     split = s.split(" ",2)
+    if len(split) < 1:
+        return
     if split[0].startswith("/py"):
-        cmd = "cd ~/mcpipy && python "+split[1]+".py"+(" "+split[2:] if len(split)>2 else "") + "&"
+        if lastProcess is not None:
+            try:
+                os.system("pkill -9 -P %d"%lastProcess.pid)
+                #os.kill(lastProcess.pid,signal.SIGKILL)
+                lastProcess.wait()
+            except:
+                pass
+            lastProcess = None
+        if len(split) < 2:
+            return
+        cmd = "cd ~/mcpipy && python3 "+split[1]+".py"+(" "+split[2:] if len(split)>2 else "")
         try:
-            system(cmd)
+            N1 = open(os.devnull, "w")
+            print(cmd)
+            lastProcess = subprocess.Popen(["sh","-c",cmd],stdout=N1,stderr=subprocess.STDOUT,close_fds=True)
         except:
             print("Error running")
-    
+ 
 pos = 1
 
 while pos+1 < len(argv):
@@ -155,9 +174,9 @@ if not triggers and not deadMonitors:
 while True:
     for pid in deadMonitors:
         try:
-            kill(pid,0)
+            os.kill(pid,0)
         except:
-            system(deadMonitors[pid][0])
+            os.system(deadMonitors[pid][0])
             if deadMonitors[pid][1]:
                 exit(1)
             else:
@@ -181,7 +200,7 @@ while True:
                     if event.value:
                         for trig in triggers:
                             if trig[0].pressed(event.code):
-                                system(trig[1])
+                                os.system(trig[1])
                                 if trig[2]:
                                     exit(0)
                     if currentDevice and event.type == evdev.ecodes.EV_KEY and not event.value:
